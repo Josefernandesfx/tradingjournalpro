@@ -1,0 +1,8 @@
+{
+  "name": "Trading Journal Pro",
+  "description": "A comprehensive SaaS application for traders to track their performance, manage psychology, and receive AI-driven insights to improve their trading edge.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
