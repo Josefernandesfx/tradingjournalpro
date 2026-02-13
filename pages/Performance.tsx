@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { User, Trade } from '../types';
 import { db } from '../db';
 import { useTranslation } from '../i18nContext';
@@ -8,6 +8,35 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGri
 interface PerformanceProps {
   user: User;
 }
+
+const SafeChart: React.FC<{ children: React.ReactNode; height: number }> = ({ children, height }) => {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
+      }
+    });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="w-full overflow-hidden min-w-0 flex flex-col" style={{ height: `${height}px` }}>
+      {size.width > 50 && size.height > 50 ? children : (
+        <div className="flex items-center justify-center h-full text-slate-600 text-[10px] font-black uppercase tracking-widest">
+          Parsing Logic...
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Performance: React.FC<PerformanceProps> = ({ user }) => {
   const trades = useMemo(() => db.getTrades(user.id), [user.id]);
@@ -123,7 +152,7 @@ const Performance: React.FC<PerformanceProps> = ({ user }) => {
           { label: t('winRate'), val: `${((stats.winCount / (stats.totalTrades || 1)) * 100).toFixed(1)}%`, color: 'text-white' },
           { label: t('ruleCompliance'), val: `${stats.ruleAdherence.toFixed(1)}%`, color: 'text-emerald-400' }
         ].map((m, i) => (
-          <div key={i} className="bg-slate-900/40 border border-slate-800/40 p-6 rounded-2xl backdrop-blur-md">
+          <div key={i} className="bg-slate-900/40 border border-slate-800/40 p-6 rounded-2xl backdrop-blur-md flex flex-col justify-center">
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{m.label}</p>
             <p className={`text-xl font-bold mt-2 ${m.color}`}>{m.val}</p>
           </div>
@@ -131,7 +160,7 @@ const Performance: React.FC<PerformanceProps> = ({ user }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md">
+        <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md min-w-0 flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-bold">{t(`by${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}` as any)}</h3>
             <div className="flex bg-black/40 p-1 rounded-xl">
@@ -147,13 +176,12 @@ const Performance: React.FC<PerformanceProps> = ({ user }) => {
             </div>
           </div>
 
-          <div className="h-[350px]">
+          <SafeChart height={320}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" opacity={0.3} />
                 <XAxis dataKey="name" stroke="#64748b" fontSize={10} axisLine={false} tickLine={false} />
                 <YAxis stroke="#64748b" fontSize={10} axisLine={false} tickLine={false} />
-                {/* Tooltip removed per user request */}
                 <Bar dataKey="pl" radius={[4, 4, 0, 0]}>
                   {chartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.pl >= 0 ? '#34d399' : '#f43f5e'} />
@@ -161,10 +189,10 @@ const Performance: React.FC<PerformanceProps> = ({ user }) => {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </SafeChart>
         </div>
 
-        <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md">
+        <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md min-w-0 flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-xl font-bold">{t('impactOnPL')}</h3>
@@ -172,20 +200,19 @@ const Performance: React.FC<PerformanceProps> = ({ user }) => {
             </div>
           </div>
 
-          <div className="h-[350px]">
+          <SafeChart height={320}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={ruleEdgeData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" opacity={0.3} />
                 <XAxis dataKey="name" stroke="#64748b" fontSize={10} axisLine={false} tickLine={false} />
                 <YAxis stroke="#64748b" fontSize={10} axisLine={false} tickLine={false} />
-                {/* Tooltip removed per user request */}
                 <Bar dataKey="pl" radius={[4, 4, 0, 0]}>
                   <Cell fill="#60a5fa" />
                   <Cell fill="#f43f5e" />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </div>
+          </SafeChart>
         </div>
       </div>
     </div>

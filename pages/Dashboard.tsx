@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { User } from '../types';
 import { db } from '../db';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -9,9 +9,55 @@ interface DashboardProps {
   user: User;
 }
 
+/**
+ * SafeChart ensures Recharts only mounts when the container has a valid non-zero size.
+ * It uses a ResizeObserver to track actual layout dimensions.
+ */
+const SafeChart: React.FC<{ children: React.ReactNode; height: number; minHeight?: number }> = ({ children, height, minHeight }) => {
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        const { width, height: observedHeight } = entry.contentRect;
+        // Recharts needs positive dimensions > 0 to avoid -1 warnings.
+        // We use a threshold of 50px to ensure the layout has stabilized.
+        if (width > 50 && observedHeight > 50) {
+          setSize({ width, height: observedHeight });
+        } else {
+          setSize(null);
+        }
+      }
+    });
+
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div 
+      ref={ref} 
+      className="w-full min-w-0 overflow-hidden relative" 
+      style={{ height: `${height}px`, minHeight: minHeight ? `${minHeight}px` : undefined }}
+    >
+      {size ? (
+        children
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-20">
+          <div className="w-8 h-8 rounded-full border-2 border-slate-500 border-t-transparent animate-spin" />
+          <p className="text-[9px] font-black uppercase tracking-[0.2em]">Calibrating Graphics...</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   const trades = useMemo(() => db.getTrades(user.id), [user.id]);
-  const psychology = useMemo(() => db.getPsychology(user.id), [user.id]);
   const { t } = useTranslation();
   
   const stats = useMemo(() => {
@@ -21,7 +67,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
     const totalPL = trades.reduce((sum, t) => sum + t.profitLoss, 0);
     const avgWin = wins.reduce((s,t) => s + t.profitLoss,0) / (wins.length || 1);
     
-    // Discipline Score
     const ruleCompliance = trades.filter(t => t.rulesFollowed).length;
     const disciplineScore = totalTrades > 0 ? (ruleCompliance / totalTrades) * 100 : 100;
 
@@ -39,8 +84,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
   }, [trades]);
 
   const winRateData = [
-    { name: 'Wins', value: stats.winRate },
-    { name: 'Losses', value: 100 - stats.winRate }
+    { name: 'Wins', value: stats.winRate || 0.001 },
+    { name: 'Losses', value: stats.totalTrades > 0 ? (100 - stats.winRate) : 100 }
   ];
 
   return (
@@ -80,13 +125,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md">
+        {/* Equity Curve Card - Fixed Height 420px */}
+        <div className="lg:col-span-2 bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md min-w-0 flex flex-col h-[520px]">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-xl font-bold">{t('equityCurve')}</h3>
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Growth Analytics</span>
           </div>
-          <div className="h-[350px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <SafeChart height={420} minHeight={380}>
+            <ResponsiveContainer width="100%" height="100%" debounce={100}>
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
@@ -104,21 +150,24 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
                 <Area type="monotone" dataKey="equity" stroke="#3b82f6" strokeWidth={3} fill="url(#equityGradient)" />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
+          </SafeChart>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md">
+        <div className="space-y-6 min-w-0 flex flex-col">
+          {/* Win Rate Card - Fixed Height 260px */}
+          <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md min-w-0 flex flex-col h-[380px]">
             <h3 className="text-lg font-bold mb-4">{t('winRate')}</h3>
-            <div className="h-[200px] flex items-center justify-center relative">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={winRateData} innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value" startAngle={90} endAngle={450}>
-                    <Cell fill="#6366f1" stroke="none" />
-                    <Cell fill="#1e293b" stroke="none" />
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="relative flex-1">
+              <SafeChart height={260} minHeight={220}>
+                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                  <PieChart>
+                    <Pie data={winRateData} innerRadius={70} outerRadius={95} paddingAngle={8} dataKey="value" startAngle={90} endAngle={450}>
+                      <Cell fill="#6366f1" stroke="none" />
+                      <Cell fill="#1e293b" stroke="none" />
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </SafeChart>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                 <span className="text-3xl font-black">{stats.winRate.toFixed(0)}%</span>
                 <span className="text-[10px] font-bold text-slate-500 uppercase">Success Rate</span>
@@ -126,7 +175,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user }) => {
             </div>
           </div>
 
-          <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md">
+          <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-3xl backdrop-blur-md flex flex-col">
             <h3 className="text-lg font-bold mb-4">{t('disciplineScore')}</h3>
             <div className="relative h-2 w-full bg-slate-800 rounded-full overflow-hidden mb-3">
               <div className="h-full bg-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.4)] transition-all duration-1000" style={{ width: `${stats.disciplineScore}%` }} />

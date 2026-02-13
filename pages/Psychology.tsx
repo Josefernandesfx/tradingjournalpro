@@ -27,10 +27,8 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
   const [editingEntry, setEditingEntry] = useState<PsychologyEntry | null>(null);
   const { t } = useTranslation();
 
-  // Rules compliance tracking inside the form (local only for this UI request)
   const [checkedRules, setCheckedRules] = useState<Set<string>>(new Set());
 
-  // Form State
   const [formData, setFormData] = useState<Partial<PsychologyEntry>>({
     date: new Date().toISOString().split('T')[0],
     emotions: [],
@@ -38,7 +36,6 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
     notes: ''
   });
 
-  // Filter State
   const [filters, setFilters] = useState({
     startDate: '',
     endDate: '',
@@ -183,25 +180,33 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-20">
+      <style>{`
+        .emotion-tag {
+          transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .emotion-tag:hover {
+          transform: scale(1.1) rotate(1deg);
+        }
+      `}</style>
+
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black uppercase tracking-tight text-white">{t('psychology')}</h2>
-          <p className="text-slate-500 font-medium">Quantify your mindset and behavioral bias.</p>
+          <h2 className="text-4xl font-black uppercase tracking-tight text-white">{t('psychology')}</h2>
+          <p className="text-slate-500 font-medium">Monitoring cognitive bias and emotional variance during market sessions.</p>
         </div>
         <button 
           onClick={() => { setIsFormOpen(true); setEditingEntry(null); setCheckedRules(new Set()); }} 
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-blue-500/20 flex items-center space-x-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-blue-500/20 flex items-center space-x-2"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
           <span>{t('addEntry')}</span>
         </button>
       </header>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-[32px] backdrop-blur-md">
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('summary')}</p>
-          <p className="text-3xl font-black mt-2 text-white">{filteredEntries.length} Sessions</p>
+          <p className="text-3xl font-black mt-2 text-white">{filteredEntries.length} Recorded Sessions</p>
         </div>
         <div className="bg-slate-900/40 border border-slate-800/40 p-8 rounded-[32px] backdrop-blur-md">
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('avgIntensity')}</p>
@@ -215,16 +220,15 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* Entry Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-[#04070F]/80 backdrop-blur-md" onClick={() => setIsFormOpen(false)} />
           <div className="relative bg-slate-900 border border-slate-800/50 w-full max-w-2xl rounded-[40px] shadow-2xl p-10 overflow-hidden max-h-[95vh] flex flex-col">
-            <h3 className="text-3xl font-black mb-8 text-white">{editingEntry ? t('editEntry') : 'New Psychology Log'}</h3>
+            <h3 className="text-3xl font-black mb-8 text-white">{editingEntry ? 'Refine Session Record' : 'Initial Session Discovery'}</h3>
             <form onSubmit={handleSave} className="space-y-8 overflow-auto pr-4 custom-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Entry Date</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Session Date</label>
                   <input 
                     type="date" 
                     value={formData.date} 
@@ -233,7 +237,7 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Intensity ({formData.intensity})</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Emotional Intensity ({formData.intensity})</label>
                   <input 
                     type="range" 
                     min="1" 
@@ -243,21 +247,21 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
                     className="w-full accent-blue-600 mt-4"
                   />
                   <div className="flex justify-between text-[10px] text-slate-600 font-black uppercase tracking-widest">
-                    <span>Low</span>
-                    <span>Extreme</span>
+                    <span>Neutral</span>
+                    <span>Peak Arousal</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Emotional State Tags</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Sentiment Identifiers</label>
                 <div className="flex flex-wrap gap-3">
                   {Object.entries(EMOTIONS_MAP).map(([key, label]) => (
                     <button
                       key={key}
                       type="button"
                       onClick={() => toggleEmotion(key)}
-                      className={`px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border-2 transition-all duration-300 hover:scale-110 ${
+                      className={`emotion-tag px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest border-2 transition-all duration-300 ${
                         formData.emotions?.includes(key) 
                         ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-600/20' 
                         : 'border-slate-800 bg-black/20 text-slate-500 hover:border-slate-600'
@@ -269,20 +273,19 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
                 </div>
               </div>
 
-              {/* Rules Checklist */}
-              <div className="bg-black/30 p-6 rounded-[24px] border border-slate-800">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-4">Execution Rules Checklist</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-black/30 p-8 rounded-[32px] border border-slate-800/60 shadow-inner">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-6">Plan Fidelity Checklist</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {rules.length > 0 ? rules.map(rule => (
-                    <label key={rule.id} className="flex items-center space-x-3 cursor-pointer group p-3 rounded-xl hover:bg-white/5 transition-colors">
+                    <label key={rule.id} className="flex items-center space-x-4 cursor-pointer group p-4 rounded-2xl hover:bg-white/5 transition-all border border-transparent hover:border-white/10">
                       <div 
                         onClick={() => toggleRuleCheck(rule.id)}
-                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                          checkedRules.has(rule.id) ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/20' : 'border-slate-700 bg-black/40'
+                        className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${
+                          checkedRules.has(rule.id) ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'border-slate-700 bg-black/40 group-hover:border-slate-500'
                         }`}
                       >
                         {checkedRules.has(rule.id) && (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                         )}
                       </div>
                       <span className={`text-xs font-bold transition-colors ${checkedRules.has(rule.id) ? 'text-emerald-400' : 'text-slate-500 group-hover:text-slate-300'}`}>
@@ -290,35 +293,35 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
                       </span>
                     </label>
                   )) : (
-                    <p className="text-[10px] text-slate-600 font-black uppercase italic">No rules defined in settings.</p>
+                    <p className="text-[10px] text-slate-600 font-black uppercase italic py-4">Defined rules not found in terminal settings.</p>
                   )}
                 </div>
               </div>
 
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Self-Analysis Notes</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Self-Reflective Narrative</label>
                 <textarea 
                   rows={4}
                   value={formData.notes}
                   onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Review your thoughts, patterns, or moments of temptation..."
-                  className="w-full bg-black/40 border border-slate-800 rounded-2xl p-5 outline-none focus:border-blue-500 transition-all text-sm text-slate-300 resize-none font-medium leading-relaxed"
+                  placeholder="Record internal dialogue, patterns of hesitation, or moments of flow..."
+                  className="w-full bg-black/40 border border-slate-800 rounded-3xl p-6 outline-none focus:border-blue-500 transition-all text-sm text-slate-300 resize-none font-medium leading-relaxed"
                 />
               </div>
 
-              <div className="flex gap-4 pt-4">
+              <div className="flex gap-4 pt-4 mb-4">
                 <button 
                   type="button" 
                   onClick={() => setIsFormOpen(false)} 
-                  className="flex-1 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 transition-all"
+                  className="flex-1 px-8 py-5 rounded-2xl font-black uppercase tracking-widest text-xs bg-slate-800 text-slate-400 hover:bg-slate-700 transition-all"
                 >
-                  Cancel
+                  Discard
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all"
+                  className="flex-1 px-8 py-5 rounded-2xl font-black uppercase tracking-widest text-xs bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all"
                 >
-                  Confirm Log
+                  Finalize Log
                 </button>
               </div>
             </form>
@@ -327,13 +330,13 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
       )}
 
       {/* Entries List */}
-      <div className="bg-slate-900/40 border border-slate-800/40 rounded-[40px] backdrop-blur-md overflow-hidden">
+      <div className="bg-slate-900/40 border border-slate-800/40 rounded-[40px] backdrop-blur-md overflow-hidden shadow-2xl">
         {selectedIds.size > 0 && (
           <div className="bg-blue-600/10 p-6 px-10 flex items-center justify-between border-b border-blue-500/20">
-            <span className="text-sm font-black text-blue-400 uppercase tracking-widest">{selectedIds.size} {t('deleteSelected')}</span>
+            <span className="text-xs font-black text-blue-400 uppercase tracking-widest">{selectedIds.size} Sessions Selected</span>
             <button 
               onClick={handleBulkDelete} 
-              className="bg-rose-500 hover:bg-rose-600 text-white px-6 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-rose-500/20"
+              className="bg-rose-500 hover:bg-rose-600 text-white px-8 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-rose-500/20"
             >
               Exterminate Selected
             </button>
@@ -353,10 +356,10 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
                       onChange={toggleSelectAll} 
                     />
                   </th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('calendar')}</th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Psychology Profile</th>
-                  <th className="px-4 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">{t('notes')}</th>
-                  <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">{t('actions')}</th>
+                  <th className="px-4 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Timeline</th>
+                  <th className="px-4 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Psychological Profile</th>
+                  <th className="px-4 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Core Insights</th>
+                  <th className="px-10 py-6 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Ops</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/40">
@@ -372,12 +375,17 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
                     </td>
                     <td className="px-4 py-8">
                       <p className="text-sm font-black text-white">{entry.date}</p>
-                      <p className="text-[10px] font-black text-slate-500 uppercase mt-1 tracking-widest">Intensity: {entry.intensity}</p>
+                      <div className="flex items-center space-x-2 mt-1.5">
+                        <div className="w-16 h-1 bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-500" style={{ width: `${entry.intensity * 10}%` }} />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Int: {entry.intensity}</span>
+                      </div>
                     </td>
                     <td className="px-4 py-8">
                       <div className="flex flex-wrap gap-2">
                         {entry.emotions.map(emo => (
-                          <span key={emo} className="text-[10px] bg-slate-800 text-slate-300 px-3 py-1.5 rounded-xl font-black uppercase tracking-widest hover:scale-110 transition-transform">
+                          <span key={emo} className="emotion-tag text-[10px] bg-slate-800/80 border border-slate-700/50 text-slate-300 px-4 py-1.5 rounded-2xl font-black uppercase tracking-widest transition-transform cursor-default">
                             {EMOTIONS_MAP[emo as keyof typeof EMOTIONS_MAP] || emo}
                           </span>
                         ))}
@@ -388,10 +396,10 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
                     </td>
                     <td className="px-10 py-8 text-right opacity-0 group-hover:opacity-100 transition-opacity">
                       <div className="flex justify-end space-x-4">
-                        <button onClick={() => handleEdit(entry)} className="text-slate-500 hover:text-blue-400 transition-colors">
+                        <button onClick={() => handleEdit(entry)} className="text-slate-500 hover:text-blue-400 transition-colors p-2">
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                         </button>
-                        <button onClick={() => handleDelete(entry.id)} className="text-slate-500 hover:text-rose-500 transition-colors">
+                        <button onClick={() => handleDelete(entry.id)} className="text-slate-500 hover:text-rose-500 transition-colors p-2">
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                         </button>
                       </div>
@@ -402,13 +410,13 @@ const Psychology: React.FC<PsychologyProps> = ({ user }) => {
             </table>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-32 text-center px-10">
+          <div className="flex flex-col items-center justify-center py-40 text-center px-10">
             <div className="w-24 h-24 bg-slate-800/40 rounded-full flex items-center justify-center text-slate-600 mb-8 border border-slate-700/40 backdrop-blur-md">
               <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 14.5A5.5 5.5 0 0 0 17.5 9 5.5 5.5 0 0 0 12 3.5 5.5 5.5 0 0 0 6.5 9 5.5 5.5 0 0 0 12 14.5Z"/><path d="M12 14.5v7"/><path d="M8 22h8"/></svg>
             </div>
-            <h3 className="text-2xl font-black uppercase tracking-tight text-white mb-4">No behavioral data</h3>
+            <h3 className="text-2xl font-black uppercase tracking-tight text-white mb-4">Void Detection: Behavioral Logs Empty</h3>
             <p className="text-slate-500 max-w-sm text-sm font-medium leading-relaxed">
-              Identify the patterns that make you lose discipline. Start journaling your mental state alongside your trade executions.
+              Quantify the invisible elements of your trading. Identifying your cognitive bias is the final step in achieving professional-grade consistency.
             </p>
           </div>
         )}
