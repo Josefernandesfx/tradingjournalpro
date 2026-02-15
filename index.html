@@ -8,30 +8,130 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
       body {
         font-family: 'Inter', sans-serif;
         margin: 0;
         padding: 0;
+        overflow-x: hidden;
       }
       .dark {
-        background-color: #0f172a;
+        background-color: #04070F;
         color: #f8fafc;
       }
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+      
+      /* --- PREMIUM TITLE SYSTEM --- */
+      @keyframes premium-shine {
+        0% { background-position: -200% center; }
+        30%, 100% { background-position: 200% center; }
       }
-      ::-webkit-scrollbar-track {
-        background: transparent;
+
+      @keyframes text-glow-blue {
+        0%, 100% { filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.2)); }
+        50% { filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.4)); }
       }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
+
+      @keyframes text-glow-emerald {
+        0%, 100% { filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.2)); }
+        50% { filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.4)); }
       }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #334155;
+
+      @keyframes text-glow-rose {
+        0%, 100% { filter: drop-shadow(0 0 2px rgba(244, 63, 94, 0.2)); }
+        50% { filter: drop-shadow(0 0 12px rgba(244, 63, 94, 0.4)); }
+      }
+
+      .premium-title-base {
+        background-size: 200% auto;
+        display: inline-block;
+        will-change: transform, filter;
+      }
+
+      .premium-shine {
+        /* Occasional shine: 8s cycle with long pause */
+        animation: premium-shine 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      }
+
+      /* Global UI Keyframes */
+      @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0px); }
+      }
+
+      @keyframes float-rank {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-15px); }
+        100% { transform: translateY(0px); }
+      }
+      
+      @keyframes glow {
+        0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.1); }
+        50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+      }
+      
+      @keyframes shine-static {
+        from { transform: translateX(-100%) skewX(-15deg); }
+        to { transform: translateX(200%) skewX(-15deg); }
+      }
+
+      @keyframes crystal-sparkle {
+        0%, 100% { opacity: 0.3; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.1); }
+      }
+
+      /* --- MARKET BACKGROUND ANIMATIONS --- */
+      @keyframes market-line-scroll {
+        from { transform: translateX(0); }
+        to { transform: translateX(-1600px); }
+      }
+
+      @keyframes market-candle-rise {
+        0% { height: 0; opacity: 0; }
+        10% { opacity: 0.15; }
+        50% { height: var(--candle-height); opacity: 0.2; }
+        90% { opacity: 0.15; }
+        100% { height: var(--candle-height); opacity: 0; }
+      }
+
+      @keyframes financial-particle-drift {
+        0% { transform: translate(0, 0); opacity: 0; }
+        20% { opacity: 0.3; }
+        80% { opacity: 0.3; }
+        100% { transform: translate(var(--drift-x), var(--drift-y)); opacity: 0; }
+      }
+
+      .animate-float { animation: float 6s ease-in-out infinite; }
+      .animate-float-rank { animation: float-rank 4s ease-in-out infinite; will-change: transform; }
+      .animate-glow-blue { animation: glow 4s ease-in-out infinite; }
+      .animate-sparkle { animation: crystal-sparkle 2s ease-in-out infinite; }
+      
+      .shine-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 50%; height: 100%;
+        background: linear-gradient(to right, transparent, rgba(255,255,255,0.03), transparent);
+        animation: shine-static 4s infinite;
+      }
+
+      .page-transition {
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+      ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #334155; }
+      
+      * {
+        transition-property: background-color, border-color, color, opacity, box-shadow, transform;
+        transition-duration: 250ms;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
       }
     </style>
   <script type="importmap">
@@ -43,14 +143,14 @@
     "recharts": "https://esm.sh/recharts@^3.7.0",
     "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
     "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
-    "vite": "https://esm.sh/vite@^7.3.1"
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "react-dom": "https://esm.sh/react-dom@^19.2.4"
   }
 }
 </script>
 </head>
-  <body>
+  <body class="dark">
     <div id="root"></div>
-    <!-- Explicit entry point for static build tools and browser execution -->
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>

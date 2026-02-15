@@ -3,10 +3,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Language } from './types';
 import { translations } from './translations';
 
+type TranslationKeys = keyof typeof translations.en;
+
 interface I18nContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: keyof typeof translations.en) => string;
+  t: (key: TranslationKeys) => string;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -16,14 +18,21 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const saved = localStorage.getItem('tjp_settings');
     if (saved) {
       const parsed = JSON.parse(saved);
-      return parsed.language || 'en';
+      return (parsed.language as Language) || 'en';
     }
     return 'en';
   });
 
-  const t = (key: keyof typeof translations.en): string => {
+  const t = (key: TranslationKeys): string => {
     const langSet = translations[language] || translations.en;
-    return (langSet as any)[key] || translations.en[key] || key;
+    const value = (langSet as any)[key] || (translations.en as any)[key];
+    
+    // Debug mode: Log missing keys if needed
+    if (!value) {
+      console.warn(`[i18n] Missing translation key: ${key}`);
+      return key;
+    }
+    return value;
   };
 
   return (
