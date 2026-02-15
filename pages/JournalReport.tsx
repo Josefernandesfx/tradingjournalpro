@@ -260,7 +260,7 @@ const JournalReport: React.FC<JournalReportProps> = ({ user }) => {
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 mb-4">Integrity Summary</p>
                 <p className="text-lg leading-relaxed">
                   Your execution compliance stands at <span className="text-blue-400 font-black">{stats.discipline.toFixed(1)}%</span>. 
-                  Professional traders aim for >95% system adherence to eliminate execution variance.
+                  Professional traders aim for &gt;95% system adherence to eliminate execution variance.
                 </p>
               </div>
               <div className="text-right">
